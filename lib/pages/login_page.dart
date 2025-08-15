@@ -84,6 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 24),
                   TextFormField(
+                    key: const ValueKey('emailField'),
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
@@ -92,6 +93,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
+                    key: const ValueKey('passwordField'),
                     controller: _passwordCtrl,
                     obscureText: _obscure,
                     decoration: InputDecoration(
@@ -114,6 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   const SizedBox(height: 20),
                   FilledButton(
+                    key: const ValueKey('loginButton'),
                     onPressed: _isLoading ? null : _submit,
                     child: _isLoading
                         ? const SizedBox(
