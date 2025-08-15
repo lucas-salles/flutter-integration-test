@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
@@ -17,6 +18,7 @@ class _SignUpPageState extends State<SignUpPage> {
   bool _isLoading = false;
   bool _obscure = true;
   bool _obscureConfirm = true;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -48,20 +50,14 @@ class _SignUpPageState extends State<SignUpPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      await AuthService.signup(
+      await authService.value.createAccount(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Conta criada!')));
-      Navigator.of(context).pushReplacementNamed('/');
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = e.message ?? 'Erro desconhecido';
+      });
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -105,6 +101,12 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     validator: _passwordValidator,
                   ),
+                  const SizedBox(height: 10),
+                  if (_errorMessage != null)
+                    Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _confirmCtrl,

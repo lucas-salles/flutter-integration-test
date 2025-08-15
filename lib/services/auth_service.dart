@@ -1,22 +1,36 @@
-/// Fake auth service (substitua pela sua implementação real)
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
+
+ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
+
 class AuthService {
-  static Future<void> login({
+  final _auth = FirebaseAuth.instance;
+
+  User? get currentUser => _auth.currentUser;
+
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  Future<UserCredential> signIn({
     required String email,
     required String password,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (email.isEmpty || password.isEmpty) {
-      throw Exception('Credenciais inválidas');
-    }
+    return await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
   }
 
-  static Future<void> signup({
+  Future<UserCredential> createAccount({
     required String email,
     required String password,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (email.length < 5 || password.length < 6) {
-      throw Exception('Verifique email e senha');
-    }
+    return await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  Future<void> signOut() async {
+    await _auth.signOut();
   }
 }

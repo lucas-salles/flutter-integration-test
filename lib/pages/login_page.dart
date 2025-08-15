@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
@@ -15,6 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
   bool _obscure = true;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -40,17 +42,14 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      await AuthService.login(
+      await authService.value.signIn(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/home');
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = e.message ?? 'Erro desconhecido';
+      });
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -84,7 +83,6 @@ class _LoginPageState extends State<LoginPage> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
-
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
@@ -93,7 +91,6 @@ class _LoginPageState extends State<LoginPage> {
                     validator: _emailValidator,
                   ),
                   const SizedBox(height: 12),
-
                   TextFormField(
                     controller: _passwordCtrl,
                     obscureText: _obscure,
@@ -109,7 +106,12 @@ class _LoginPageState extends State<LoginPage> {
                     validator: _passwordValidator,
                     onFieldSubmitted: (_) => _submit(),
                   ),
-
+                  const SizedBox(height: 10),
+                  if (_errorMessage != null)
+                    Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
                   const SizedBox(height: 20),
                   FilledButton(
                     onPressed: _isLoading ? null : _submit,
@@ -121,7 +123,6 @@ class _LoginPageState extends State<LoginPage> {
                           )
                         : const Text('Entrar'),
                   ),
-
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: _isLoading

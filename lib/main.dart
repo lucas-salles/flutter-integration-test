@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import 'pages/auth_or_home_page.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
@@ -26,8 +27,10 @@ class MyApp extends StatelessWidget {
           border: OutlineInputBorder(),
         ),
       ),
+      initialRoute: '/',
       routes: {
-        '/': (_) => const LoginPage(),
+        '/': (_) => const AuthOrHomePage(),
+        '/login': (_) => const LoginPage(),
         '/signup': (_) => const SignUpPage(),
         '/home': (_) => const HomePage(),
       },

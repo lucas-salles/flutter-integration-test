@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_integration_test/services/auth_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,6 +16,14 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _counter++;
     });
+  }
+
+  void _logout() async {
+    try {
+      await authService.value.signOut();
+    } on FirebaseAuthException catch (e) {
+      debugPrint(e.message);
+    }
   }
 
   @override
@@ -33,10 +43,7 @@ class _HomePageState extends State<HomePage> {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
-            FilledButton.tonal(
-              onPressed: () => Navigator.of(context).pushReplacementNamed('/'),
-              child: const Text('Sair'),
-            ),
+            FilledButton.tonal(onPressed: _logout, child: const Text('Sair')),
           ],
         ),
       ),
