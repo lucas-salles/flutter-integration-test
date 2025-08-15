@@ -1,0 +1,7 @@
+appId: com.example.flutter_integration_test
+---
+- launchApp:
+    clearState: true
+- assertVisible: "0"
+- tapOn: fabAddIcon
+- assertVisible: "1"
