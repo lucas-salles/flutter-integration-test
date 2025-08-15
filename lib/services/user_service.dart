@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class UserService {
   final _firestore = FirebaseFirestore.instance;
@@ -16,22 +17,7 @@ class UserService {
         'createdAt': DateTime.now().toIso8601String(),
       });
     } catch (e) {
-      print('createUser error: $e');
-    }
-  }
-
-  Future<void> getUsers() async {
-    try {
-      final userSnapshot = await _firestore.collection('users').get();
-      if (userSnapshot.docs.isEmpty) {
-        print('No users found');
-        return;
-      }
-      for (var doc in userSnapshot.docs) {
-        print('User: ${doc.data()}');
-      }
-    } catch (e) {
-      print('getUsers error: $e');
+      debugPrint('createUser error: $e');
     }
   }
 }
