@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_integration_test/main.dart';
+import 'package:flutter_integration_test/app.dart';
+import 'package:flutter_integration_test/helpers/seed_helper.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -10,6 +13,9 @@ void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp();
+    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+    FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+    await seedDataForE2ETests();
   });
 
   group('end-to-end test', () {
@@ -30,7 +36,7 @@ void main() {
       expect(passwordField, findsOneWidget);
 
       // Fill the fiels
-      await tester.enterText(emailField, 'teste@email.com');
+      await tester.enterText(emailField, 'member1@e2e.com');
       await tester.enterText(passwordField, '123456');
 
       // Tap the enter button
