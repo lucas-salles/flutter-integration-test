@@ -18,7 +18,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.32.4'
 
       - name: Install dependencies
         run: flutter pub get
@@ -28,8 +28,11 @@ jobs:
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
       - name: Build debug APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --dart-define=USE_FIREBASE_EMULATORS=true
 
       - name: Enable KVM
         run: |
@@ -48,4 +51,4 @@ jobs:
           disable-animations: true
           script: |
             adb install build/app/outputs/flutter-apk/app-debug.apk
-            maestro test integration_test/maestro/flow.yaml
+            firebase emulators:exec "maestro test integration_test/maestro/home.yaml"
