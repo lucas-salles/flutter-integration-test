@@ -53,5 +53,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            adb install build/app/outputs/flutter-apk/app-debug.apk
-            maestro test integration_test/maestro/flow.yaml
+            firebase emulators:exec "
+              adb install build/app/outputs/flutter-apk/app-debug.apk &&
+              maestro test integration_test/maestro/home.yaml
+            "
