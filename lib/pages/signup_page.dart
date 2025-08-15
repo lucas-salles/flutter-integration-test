@@ -54,6 +54,7 @@ class _SignUpPageState extends State<SignUpPage> {
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
+      _popPage();
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = e.message ?? 'Erro desconhecido';
@@ -61,6 +62,10 @@ class _SignUpPageState extends State<SignUpPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _popPage() {
+    Navigator.pop(context);
   }
 
   @override

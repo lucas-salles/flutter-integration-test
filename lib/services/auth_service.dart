@@ -1,10 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
+import 'user_service.dart';
+
 ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
 
 class AuthService {
   final _auth = FirebaseAuth.instance;
+  final _userService = UserService();
 
   User? get currentUser => _auth.currentUser;
 
@@ -24,10 +27,19 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    return await _auth.createUserWithEmailAndPassword(
+    final userCredential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
+    final user = userCredential.user;
+    if (user != null) {
+      await _userService.createUser(
+        uid: user.uid,
+        email: user.email ?? '',
+        name: user.displayName ?? '',
+      );
+    }
+    return userCredential;
   }
 
   Future<void> signOut() async {
