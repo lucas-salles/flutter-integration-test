@@ -1,0 +1,10 @@
+appId: com.lucassales.flutter_integration_test
+---
+- launchApp:
+    clearState: true
+- tapOn: "Email"
+- inputText: "teste@email.com"
+- tapOn: "Senha"
+- inputText: "123456"
+- tapOn: "Entrar"
+- assertVisible: "Home"
