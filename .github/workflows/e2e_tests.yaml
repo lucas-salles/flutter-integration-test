@@ -54,9 +54,4 @@ jobs:
           disable-animations: true
           script: |
             adb install build/app/outputs/flutter-apk/app-debug.apk
-            # Start Firebase emulators in background
-            firebase emulators:start & 
-            EMULATOR_PID=$!
-            sleep 15 # espera os emuladores subirem
-            maestro test integration_test/maestro/home.yaml
-            kill $EMULATOR_PID
+            firebase emulators:exec "maestro test integration_test/maestro/home.yaml"
