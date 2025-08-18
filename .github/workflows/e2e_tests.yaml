@@ -1,10 +1,13 @@
 name: Flutter E2E Tests on Release Tags
 
 on:
-  workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
+  # workflow_dispatch:
+  # push:
+  #   tags:
+  #     - 'v*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   tests:
@@ -51,4 +54,9 @@ jobs:
           disable-animations: true
           script: |
             adb install build/app/outputs/flutter-apk/app-debug.apk
-            firebase emulators:exec "maestro test integration_test/maestro/home.yaml"
+            # Start Firebase emulators in background
+            firebase emulators:start & 
+            EMULATOR_PID=$!
+            sleep 15 # espera os emuladores subirem
+            maestro test integration_test/maestro/home.yaml
+            kill $EMULATOR_PID
