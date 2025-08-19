@@ -65,7 +65,7 @@ jobs:
 
       - name: Upload Maestro failure screenshots (if any)
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: maestro-failure-screenshots
           path: maestro/**/*.png
