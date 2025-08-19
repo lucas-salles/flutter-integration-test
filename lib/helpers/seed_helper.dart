@@ -50,9 +50,7 @@ Future<void> seedDataForE2ETests() async {
 }
 
 Future<bool> _shouldRunSeed() async {
-  const useEmulators = bool.fromEnvironment('USE_FIREBASE_EMULATORS');
-
   final usersQuery = await FirebaseFirestore.instance.collection('users').get();
 
-  return useEmulators && usersQuery.docs.isEmpty;
+  return usersQuery.docs.isEmpty;
 }
