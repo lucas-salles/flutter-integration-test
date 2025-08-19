@@ -56,11 +56,4 @@ jobs:
           script: |
             # adb install build/app/outputs/flutter-apk/app-debug.apk
             # firebase emulators:exec "maestro test integration_test/maestro/home.yaml"
-            firebase emulators:exec "flutter test integration_test"
-
-      # - name: Upload Maestro failure screenshots (if any)
-      #   if: failure()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: maestro-failure-screenshots
-      #     path: /home/runner/.maestro/tests/**/*.png
+            firebase emulators:exec "flutter test integration_test --dart-define=USE_FIREBASE_EMULATORS=true"
