@@ -37,6 +37,9 @@ jobs:
       - name: Start Firebase Emulators
         run: firebase emulators:start &
 
+      - name: Esperar os emuladores estarem prontos
+        run: sleep 10
+
       - name: Build debug APK
         run: flutter build apk --debug --dart-define=USE_FIREBASE_EMULATORS=true
 
