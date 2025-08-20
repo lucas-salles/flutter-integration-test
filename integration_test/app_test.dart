@@ -60,6 +60,19 @@ void main() {
 
       // Verify the counter increments by 1.
       expect(find.text('1'), findsOneWidget);
+
+      // Finds the logout button
+      final logoutButton = find.byKey(const ValueKey('logoutButton'));
+
+      // Ensures that logout button exists
+      expect(logoutButton, findsOneWidget);
+
+      // Tap the logout button
+      await tester.tap(logoutButton);
+      await tester.pumpAndSettle();
+
+      // Check if navigates to login page
+      expect(find.text('Login'), findsOneWidget);
     });
   });
 }

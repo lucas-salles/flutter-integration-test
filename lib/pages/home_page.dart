@@ -44,7 +44,11 @@ class _HomePageState extends State<HomePage> {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
-            FilledButton.tonal(onPressed: _logout, child: const Text('Sair')),
+            FilledButton.tonal(
+              key: const ValueKey('logoutButton'),
+              onPressed: _logout,
+              child: const Text('Sair'),
+            ),
           ],
         ),
       ),
