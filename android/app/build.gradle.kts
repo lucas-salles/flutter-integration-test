@@ -11,10 +11,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+val devKeystoreProperties = Properties()
+val devKeystorePropertiesFile = rootProject.file("key.properties")
+if (devKeystorePropertiesFile.exists()) {
+    devKeystoreProperties.load(FileInputStream(devKeystorePropertiesFile))
+}
+
+val prodKeystoreProperties = Properties()
+val prodKeystorePropertiesFile = rootProject.file("key.properties")
+if (prodKeystorePropertiesFile.exists()) {
+    prodKeystoreProperties.load(FileInputStream(prodKeystorePropertiesFile))
 }
 
 android {
@@ -43,19 +49,47 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
-            storePassword = keystoreProperties["storePassword"] as String
+        getByName("debug") {
+            storeFile = file("../debug-keystore.jks")
+            keyAlias = "debug"
+            keyPassword = "debugpassword"
+            storePassword = "debugpassword"
+        }
+        create("dev") {
+            keyAlias = devKeystoreProperties["keyAlias"] as String
+            keyPassword = devKeystoreProperties["keyPassword"] as String
+            storeFile = devKeystoreProperties["storeFile"]?.let { file(it) }
+            storePassword = devKeystoreProperties["storePassword"] as String
+        }
+        create("prod") {
+            keyAlias = prodKeystoreProperties["keyAlias"] as String
+            keyPassword = prodKeystoreProperties["keyPassword"] as String
+            storeFile = prodKeystoreProperties["storeFile"]?.let { file(it) }
+            storePassword = prodKeystoreProperties["storePassword"] as String
         }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("release")
+            //signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    flavorDimensions += "default"
+    productFlavors {
+        create("dev") {
+            dimension = "default"
+            applicationIdSuffix = ".dev"
+            resValue(type = "string", name = "app_name", value = "Flutter Integration Dev")
+            signingConfig = signingConfigs.getByName("dev")
+        }
+        create("prod") {
+            dimension = "default"
+            resValue(type = "string", name = "app_name", value = "Flutter Integration")
+            signingConfig = signingConfigs.getByName("prod")
         }
     }
 }
