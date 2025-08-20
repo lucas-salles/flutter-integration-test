@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../flavors.dart';
 import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -70,6 +71,12 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const SizedBox(height: 12),
+                  Text(
+                    Flavor.title,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 12),
                   Icon(
                     Icons.lock_outline,
