@@ -81,9 +81,9 @@ jobs:
           disable-animations: true
           script: |
             adb install build/app/outputs/flutter-apk/app-dev-debug.apk
-            firebase emulators:exec "maestro test integration_test/maestro/logout.yaml"
+            firebase emulators:exec "maestro test integration_test/maestro"
 
-      - name: Upload Maestro failure screenshots (if any)
+      - name: Upload Maestro failure artifacts (if any)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
