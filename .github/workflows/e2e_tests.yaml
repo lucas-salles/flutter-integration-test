@@ -1,4 +1,4 @@
-name: Maestro Tests on Release Tags
+name: Flutter E2E Tests on Release Tags
 
 on:
   # workflow_dispatch:
@@ -10,8 +10,8 @@ on:
       - main
 
 jobs:
-  maestro-tests:
-    name: Run Maestro Tests
+  e2e-tests:
+    name: Run E2E Tests
     runs-on: ubuntu-latest
 
     steps:
