@@ -1,13 +1,10 @@
 name: Flutter E2E Tests on Release Tags
 
 on:
-  # workflow_dispatch:
-  # push:
-  #   tags:
-  #     - 'v*'
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   e2e-tests:
