@@ -49,5 +49,4 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            adb install build/app/outputs/flutter-apk/app-dev-debug.apk
             firebase emulators:exec "flutter test integration_test --flavor dev --dart-define=USE_FIREBASE_EMULATORS=true"
