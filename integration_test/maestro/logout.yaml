@@ -1,12 +1,5 @@
 appId: com.lucassales.flutter_integration_test.dev
 ---
-- launchApp:
-    clearState: true
-- tapOn: "Email"
-- inputText: "member1@e2e.com"
-- tapOn: "Senha"
-- inputText: "123456"
-- tapOn: "Entrar"
-- assertVisible: "Home"
+- runFlow: login.yaml
 - tapOn: "Sair"
 - assertVisible: "Login"
