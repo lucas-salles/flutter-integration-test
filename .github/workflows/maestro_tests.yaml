@@ -57,6 +57,9 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 28
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
@@ -79,12 +82,6 @@ jobs:
           script: |
             adb install build/app/outputs/flutter-apk/app-dev-debug.apk
             firebase emulators:exec "maestro test integration_test/maestro/logout.yaml"
-
-      - name: List Maestro test outputs
-        if: always()
-        run: |
-          echo "== Conteúdo da pasta .maestro =="
-          ls -R .maestro || echo "Nenhum arquivo .maestro encontrado"
 
       - name: Upload Maestro failure screenshots (if any)
         if: failure()
