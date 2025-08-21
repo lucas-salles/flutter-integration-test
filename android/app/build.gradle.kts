@@ -59,7 +59,7 @@ android {
             keyAlias = devKeystoreProperties["keyAlias"] as String?
             keyPassword = devKeystoreProperties["keyPassword"] as String?
             storeFile = devKeystoreProperties["storeFile"]?.let { file(it) }
-            storePassword = devKeystoreProperties["storePassword"] as String
+            storePassword = devKeystoreProperties["storePassword"] as String?
         }
         create("prod") {
             keyAlias = prodKeystoreProperties["keyAlias"] as String?
