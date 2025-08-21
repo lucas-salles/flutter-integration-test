@@ -57,9 +57,15 @@ jobs:
             adb install build/app/outputs/flutter-apk/app-dev-debug.apk
             firebase emulators:exec "maestro test integration_test/maestro/logout.yaml"
 
-      - name: Upload Maestro failure screenshots (if any)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: maestro-failure-screenshots
-          path: /home/runner/.maestro/tests/**/screenshots/*.png
+      - name: List Maestro test outputs
+        if: always()
+        run: |
+          echo "== Conteúdo da pasta .maestro =="
+          ls -R .maestro || echo "Nenhum arquivo .maestro encontrado"
+
+      # - name: Upload Maestro failure screenshots (if any)
+      #   if: failure()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: maestro-failure-screenshots
+      #     path: /home/runner/.maestro/tests/**/screenshots/*.png

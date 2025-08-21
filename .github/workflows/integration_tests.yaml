@@ -45,8 +45,8 @@ jobs:
           api-level: 28
           target: google_apis
           arch: x86_64
-          profile: pixel_5
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          profile: Nexus 6
+          emulator-options: -no-window -noaudio -gpu swiftshader_indirect -skin 1080x1920 -dpi-device 420
           disable-animations: true
           script: |
             firebase emulators:exec "flutter test integration_test --flavor dev --dart-define=USE_FIREBASE_EMULATORS=true"
