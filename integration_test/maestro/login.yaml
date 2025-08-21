@@ -1,4 +1,4 @@
-appId: com.lucassales.flutter_integration_test
+appId: com.lucassales.flutter_integration_test.dev
 ---
 - launchApp:
     clearState: true

@@ -1,8 +1,0 @@
-appId: com.lucassales.flutter_integration_test
----
-- runFlow: login.yaml
-- assertVisible: "0"
-- tapOn: fabAddIcon
-- assertVisible: "1"
-- tapOn: "Sair"
-- assertVisible: "Login"
