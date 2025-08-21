@@ -1,4 +1,4 @@
-name: Flutter Maestro Tests on Release Tags
+name: Maestro Tests on Release Tags
 
 on:
   # workflow_dispatch:
