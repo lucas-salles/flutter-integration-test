@@ -56,16 +56,16 @@ android {
             storePassword = "debugpassword"
         }
         create("dev") {
-            keyAlias = devKeystoreProperties["keyAlias"] as String
-            keyPassword = devKeystoreProperties["keyPassword"] as String
+            keyAlias = devKeystoreProperties["keyAlias"] as String?
+            keyPassword = devKeystoreProperties["keyPassword"] as String?
             storeFile = devKeystoreProperties["storeFile"]?.let { file(it) }
             storePassword = devKeystoreProperties["storePassword"] as String
         }
         create("prod") {
-            keyAlias = prodKeystoreProperties["keyAlias"] as String
-            keyPassword = prodKeystoreProperties["keyPassword"] as String
+            keyAlias = prodKeystoreProperties["keyAlias"] as String?
+            keyPassword = prodKeystoreProperties["keyPassword"] as String?
             storeFile = prodKeystoreProperties["storeFile"]?.let { file(it) }
-            storePassword = prodKeystoreProperties["storePassword"] as String
+            storePassword = prodKeystoreProperties["storePassword"] as String?
         }
     }
 
