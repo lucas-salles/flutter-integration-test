@@ -12,13 +12,13 @@ plugins {
 }
 
 val devKeystoreProperties = Properties()
-val devKeystorePropertiesFile = rootProject.file("key.properties")
+val devKeystorePropertiesFile = rootProject.file("dev-key.properties")
 if (devKeystorePropertiesFile.exists()) {
     devKeystoreProperties.load(FileInputStream(devKeystorePropertiesFile))
 }
 
 val prodKeystoreProperties = Properties()
-val prodKeystorePropertiesFile = rootProject.file("key.properties")
+val prodKeystorePropertiesFile = rootProject.file("prod-key.properties")
 if (prodKeystorePropertiesFile.exists()) {
     prodKeystoreProperties.load(FileInputStream(prodKeystorePropertiesFile))
 }
