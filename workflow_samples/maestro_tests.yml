@@ -1,12 +1,14 @@
-name: Run maestro tests
+name: Maestro Tests on Release Tags
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 jobs:
-  integration-test:
+  maestro-tests:
+    name: Run Maestro Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -16,7 +18,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.32.4'
 
       - name: Install dependencies
         run: flutter pub get
@@ -26,8 +28,8 @@ jobs:
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
 
       - name: Enable KVM
         run: |
@@ -35,15 +37,52 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Start emulator and run integration tests
-        uses: reactivecircus/android-emulator-runner@v2
-        timeout-minutes: 8
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+        
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
         with:
-          api-level: 31
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-28
+
+      - name: create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 28
           target: google_apis
           arch: x86_64
+          profile: pixel_5
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Build debug APK
+        run: flutter build apk --debug --flavor dev --dart-define=USE_FIREBASE_EMULATORS=true
+
+      - name: Start emulator and run integration tests
+        uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 15
+        with:
+          api-level: 28
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            adb install build/app/outputs/flutter-apk/app-debug.apk
-            maestro test integration_test/maestro/flow.yaml
+            adb install build/app/outputs/flutter-apk/app-dev-debug.apk
+            firebase emulators:exec "maestro test integration_test/maestro"
+
+      - name: Upload Maestro failure screenshots (if any)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-artifacts
+          path: /home/runner/.maestro/tests/**

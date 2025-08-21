@@ -4,5 +4,3 @@ appId: com.lucassales.flutter_integration_test
 - assertVisible: "0"
 - tapOn: fabAddIcon
 - assertVisible: "1"
-- tapOn: "Sair"
-- assertVisible: "Login"

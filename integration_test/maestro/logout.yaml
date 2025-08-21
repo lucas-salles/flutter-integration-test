@@ -1,0 +1,5 @@
+appId: com.lucassales.flutter_integration_test.dev
+---
+- runFlow: login.yaml
+- tapOn: "Sair"
+- assertVisible: "Login"

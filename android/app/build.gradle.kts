@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -6,6 +9,18 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val devKeystoreProperties = Properties()
+val devKeystorePropertiesFile = rootProject.file("dev-key.properties")
+if (devKeystorePropertiesFile.exists()) {
+    devKeystoreProperties.load(FileInputStream(devKeystorePropertiesFile))
+}
+
+val prodKeystoreProperties = Properties()
+val prodKeystorePropertiesFile = rootProject.file("prod-key.properties")
+if (prodKeystorePropertiesFile.exists()) {
+    prodKeystoreProperties.load(FileInputStream(prodKeystorePropertiesFile))
 }
 
 android {
@@ -33,11 +48,48 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("../debug-keystore.jks")
+            keyAlias = "debug"
+            keyPassword = "debugpassword"
+            storePassword = "debugpassword"
+        }
+        create("dev") {
+            keyAlias = devKeystoreProperties["keyAlias"] as String?
+            keyPassword = devKeystoreProperties["keyPassword"] as String?
+            storeFile = devKeystoreProperties["storeFile"]?.let { file(it) }
+            storePassword = devKeystoreProperties["storePassword"] as String?
+        }
+        create("prod") {
+            keyAlias = prodKeystoreProperties["keyAlias"] as String?
+            keyPassword = prodKeystoreProperties["keyPassword"] as String?
+            storeFile = prodKeystoreProperties["storeFile"]?.let { file(it) }
+            storePassword = prodKeystoreProperties["storePassword"] as String?
+        }
+    }
+
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+        debug {
             signingConfig = signingConfigs.getByName("debug")
+        }
+        release {
+            //signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    flavorDimensions += "default"
+    productFlavors {
+        create("dev") {
+            dimension = "default"
+            applicationIdSuffix = ".dev"
+            resValue(type = "string", name = "app_name", value = "Flutter Integration Dev")
+            signingConfig = signingConfigs.getByName("dev")
+        }
+        create("prod") {
+            dimension = "default"
+            resValue(type = "string", name = "app_name", value = "Flutter Integration")
+            signingConfig = signingConfigs.getByName("prod")
         }
     }
 }
