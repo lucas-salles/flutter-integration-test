@@ -1,10 +1,13 @@
 name: Flutter E2E Tests on Release Tags
 
 on:
-  workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
+  # workflow_dispatch:
+  # push:
+  #   tags:
+  #     - 'v*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   e2e-tests:
@@ -38,7 +41,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Gradle cache
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         
       - name: AVD cache
         uses: actions/cache@v4
