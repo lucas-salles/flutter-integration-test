@@ -1,10 +1,13 @@
 name: Flutter E2E Tests on Release Tags
 
 on:
-  workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
+  # workflow_dispatch:
+  # push:
+  #   tags:
+  #     - 'v*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   e2e-tests:
@@ -72,7 +75,7 @@ jobs:
           api-level: 28
           target: google_apis
           arch: x86_64
-          profile: pixel_5
+          profile: Nexus 4
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
