@@ -63,10 +63,9 @@ jobs:
             echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}" | base64 --decode > firebase_service_account.json
           fi
 
-      # - name: Debug firebase_service_account.json
-      #   run: |
-      #     cat firebase_service_account.json
-      #     jq . firebase_service_account.json
+      - name: Validate Firebase JSON
+        run: |
+          cat firebase_service_account.json | jq .
 
       - name: Build Web
         run: |
