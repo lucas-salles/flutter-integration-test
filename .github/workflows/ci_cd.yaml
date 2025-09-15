@@ -1,5 +1,10 @@
 name: Publish Android, iOS and Web release
 
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+
 on:
   # workflow_dispatch:
   # push:
@@ -48,40 +53,6 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_ENV
           echo "Environment: $ENVIRONMENT"
           echo "Version: $VERSION"
-
-      # ----------------- ANDROID -----------------
-      # - name: Build Android
-      #   if: matrix.platform == 'android'
-      #   run: |
-      #     flutter build appbundle \
-      #       --flavor ${matrix.flavor} \
-      #       --release
-
-      # - name: Upload to Play Store
-      #   if: matrix.platform == 'android'
-      #   uses: r0adkll/upload-google-play@v1
-      #   with:
-      #     serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_JSON }}
-      #     packageName: com.seuprojeto.${{ matrix.flavor }}
-      #     releaseFiles: build/app/outputs/bundle/${{ matrix.flavor }}Release/app-${{ matrix.flavor }}-release.aab
-      #     track: internal
-
-      # ----------------- IOS -----------------
-      # - name: Build iOS
-      #   if: matrix.platform == 'ios'
-      #   run: |
-      #     flutter build ipa \
-      #       --flavor ${matrix.flavor} \
-      #       --release
-
-      # - name: Upload to TestFlight
-      #   if: matrix.platform == 'ios'
-      #   uses: apple-actions/upload-testflight@v1
-      #   with:
-      #     app-path: build/ios/ipa/*.ipa
-      #     api-key-id: ${{ secrets.APP_STORE_KEY_ID }}
-      #     api-key-issuer-id: ${{ secrets.APP_STORE_ISSUER_ID }}
-      #     api-private-key: ${{ secrets.APP_STORE_P8 }}
 
       # ----------------- WEB -----------------
       - name: Decode Firebase service account
