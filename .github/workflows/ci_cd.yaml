@@ -63,17 +63,10 @@ jobs:
             echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}" | base64 --decode > firebase_service_account.json
           fi
 
-      - name: Debug firebase_service_account.json
-        run: |
-          cat firebase_service_account.json
-          jq . firebase_service_account.json
-          
-      - name: Remove .firebase folder if exists
-        run: |
-          if [ -d ".firebase" ]; then
-            echo "Removing .firebase folder..."
-            rm -rf .firebase
-          fi
+      # - name: Debug firebase_service_account.json
+      #   run: |
+      #     cat firebase_service_account.json
+      #     jq . firebase_service_account.json
 
       - name: Build Web
         run: |
