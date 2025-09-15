@@ -12,7 +12,8 @@ import 'helpers/seed_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Flavor.appFlavor = switch (appFlavor) {
+  const appEnv = String.fromEnvironment('APP_ENV');
+  Flavor.appFlavor = switch (appEnv.isNotEmpty ? appEnv : appFlavor) {
     'prod' => Flavors.prod,
     'dev' => Flavors.dev,
     _ => throw UnsupportedError('Invalid flavor: $appFlavor'),

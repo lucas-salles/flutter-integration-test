@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "flutter-integration-test-8faf5"
+    "default": "lutter-integration-test-ffb8e",
+    "dev": "lutter-integration-test-ffb8e",
+    "prod": "flutter-integration-test-8faf5"
   }
 }
