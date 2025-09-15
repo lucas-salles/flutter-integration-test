@@ -1,0 +1,112 @@
+name: Publish Android, iOS and Web release
+
+on:
+  # workflow_dispatch:
+  # push:
+  #   tags:
+  #     - 'dev/*'
+  #     - 'prod/*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Run CI/CD
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.4'
+          cache: true
+
+      - name: Set environment and version from tag
+        id: env
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG_NAME=${GITHUB_REF#refs/tags/}       # remove refs/tags/
+            ENVIRONMENT=${TAG_NAME%%/*}             # before the first /
+            VERSION=${TAG_NAME#*/}                  # after the first /
+
+            # If environment is not dev or prod, use fallback
+            if [[ "$ENVIRONMENT" != "dev" && "$ENVIRONMENT" != "prod" ]]; then
+              echo "Warning: Environment not recognized, using default 'dev'"
+              ENVIRONMENT="dev"
+            fi
+          else
+            echo "No tag detected, using default environment 'dev'"
+            ENVIRONMENT="dev"
+            VERSION="manual"
+          fi
+
+          echo "environment=$ENVIRONMENT" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_ENV
+          echo "Environment: $ENVIRONMENT"
+          echo "Version: $VERSION"
+
+      # ----------------- ANDROID -----------------
+      # - name: Build Android
+      #   if: matrix.platform == 'android'
+      #   run: |
+      #     flutter build appbundle \
+      #       --flavor ${matrix.flavor} \
+      #       --release
+
+      # - name: Upload to Play Store
+      #   if: matrix.platform == 'android'
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_JSON }}
+      #     packageName: com.seuprojeto.${{ matrix.flavor }}
+      #     releaseFiles: build/app/outputs/bundle/${{ matrix.flavor }}Release/app-${{ matrix.flavor }}-release.aab
+      #     track: internal
+
+      # ----------------- IOS -----------------
+      # - name: Build iOS
+      #   if: matrix.platform == 'ios'
+      #   run: |
+      #     flutter build ipa \
+      #       --flavor ${matrix.flavor} \
+      #       --release
+
+      # - name: Upload to TestFlight
+      #   if: matrix.platform == 'ios'
+      #   uses: apple-actions/upload-testflight@v1
+      #   with:
+      #     app-path: build/ios/ipa/*.ipa
+      #     api-key-id: ${{ secrets.APP_STORE_KEY_ID }}
+      #     api-key-issuer-id: ${{ secrets.APP_STORE_ISSUER_ID }}
+      #     api-private-key: ${{ secrets.APP_STORE_P8 }}
+
+      # ----------------- WEB -----------------
+      - name: Decode Firebase service account
+        run: |
+          if [ "${{ env.environment }}" = "dev" ]; then
+            echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}" | base64 --decode > firebase_service_account.json
+          else
+            echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}" | base64 --decode > firebase_service_account.json
+          fi
+          
+      - name: Remove .firebase folder if exists
+        run: |
+          if [ -d ".firebase" ]; then
+            echo "Removing .firebase folder..."
+            rm -rf .firebase
+          fi
+
+      - name: Build Web
+        run: |
+          flutter build web --release --dart-define=APP_ENV=${{ env.environment }}
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: firebase_service_account.json
+          channelId: live
+          projectId: ${{ env.environment == 'dev' && 'flutter-integration-test-ffb8e' || env.environment == 'prod' && 'flutter-integration-test-8faf5' }}
