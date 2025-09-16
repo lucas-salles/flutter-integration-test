@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_integration_test/widgets/version_display.dart';
 
 import '../flavors.dart';
 import '../services/auth_service.dart';
@@ -78,6 +79,8 @@ class _LoginPageState extends State<LoginPage> {
                       style: Theme.of(context).textTheme.headlineSmall,
                       textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: 12),
+                    VersionDisplay(),
                     const SizedBox(height: 12),
                     Icon(
                       Icons.lock_outline,
