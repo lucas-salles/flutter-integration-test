@@ -56,7 +56,7 @@ jobs:
 
       - name: Create key.properties for ${{ env.environment }}
         run: |
-          cat <<EOF > android/keystore-${{ env.environment }}.properties
+          cat <<EOF > android/${{ env.environment }}-key.properties
           storePassword=${{ env.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
           keyPassword=${{ env.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
           keyAlias=${{ env.environment }}Key
