@@ -19,19 +19,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Ruby
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.4'
+          cache: true
+
+      - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
 
       - name: Install Fastlane
         run: gem install fastlane
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.32.4'
-          cache: true
 
       - name: Set environment and version from tag
         id: env
@@ -58,12 +58,12 @@ jobs:
           echo "Version: $VERSION"
 
       # ----------------- ANDROID -----------------
-      - name: Get build number from play store
+      - name: Get build number from Play Store
         id: get_build_number
         run: |
           export ANDROID_PACKAGE_NAME=${{ env.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
-          export GOOGLE_PLAY_JSON_KEY='${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}'
-          LAST=$(bundle exec fastlane android get_version_code | tail -n 1)
+          echo '${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}' > /tmp/google_play.json
+          LAST=$(fastlane run get_version_code package_name:$ANDROID_PACKAGE_NAME json_key:/tmp/google_play.json | tail -n 1)
           NEXT=$((LAST+1))
           echo "BUILD_NUMBER=$NEXT" >> $GITHUB_ENV
 
