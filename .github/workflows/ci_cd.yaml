@@ -65,6 +65,15 @@ jobs:
           keyAlias=${{ env.environment }}Key
           storeFile=../keystore-${{ env.environment }}.jks
           EOF
+      
+      - name: Extract version from pubspec
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          VERSION_NAME=${VERSION%%+*}
+          VERSION_CODE=${VERSION##*+}
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$VERSION_CODE ($VERSION_NAME)" >> $GITHUB_ENV
 
       - name: Build Android
         run: flutter build appbundle --flavor ${{ env.environment }} --release
@@ -75,9 +84,9 @@ jobs:
           serviceAccountJsonPlainText: ${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
           packageName: ${{ env.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
           releaseFiles: build/app/outputs/bundle/${{ env.environment }}Release/app-${{ env.environment }}-release.aab
+          releaseName: ${{ env.RELEASE_NAME }}
           track: internal
           status: draft
-          whatsNewDirectory: distribution/whatsnew
 
       # ----------------- WEB -----------------
       # - name: Build Web
