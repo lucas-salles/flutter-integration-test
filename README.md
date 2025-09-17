@@ -2,15 +2,42 @@
 
 A new Flutter project.
 
-## Getting Started
+## 🏗️ Development & Build
 
-This project is a starting point for a Flutter application.
+- **Run (Development)**
 
-A few resources to get you started if this is your first Flutter project:
+```sh
+flutter run --flavor dev
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **Run (Production)**
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+flutter run --flavor prod
+```
+
+- **Build APK / App Bundle (Development)**
+
+```sh
+flutter build apk --flavor dev
+flutter build appbundle --flavor dev
+```
+
+- **Build APK / App Bundle (Production)**
+
+```sh
+flutter build apk --flavor prod
+flutter build appbundle --flavor prod
+```
+
+- **Build Web (Development)**
+
+```sh
+flutter build web --release --dart-define=APP_ENV=dev
+```
+
+- **Build Web (Production)**
+
+```sh
+flutter build web --release --dart-define=APP_ENV=prod
+```
