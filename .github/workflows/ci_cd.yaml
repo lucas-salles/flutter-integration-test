@@ -58,24 +58,34 @@ jobs:
           echo "Version: $VERSION"
 
       # ----------------- ANDROID -----------------
-      - name: Get build number from Play Store
+      - name: Get build number from play store
         id: get_build_number
         run: |
-          export ANDROID_PACKAGE_NAME=${{ env.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
-          echo '${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}' > /tmp/google_play.json
+          echo "${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}" > /tmp/google_play.json
 
-          fastlane supply \
+          export ANDROID_PACKAGE_NAME=${{ env.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
+
+          # Executa o supply e captura os version_codes
+          OUTPUT=$(fastlane supply \
             --json_key /tmp/google_play.json \
             --package_name $ANDROID_PACKAGE_NAME \
             --skip_upload_metadata \
             --skip_upload_images \
             --skip_upload_screenshots \
-            --track internal \
-            --json_output /tmp/output.json
+            --track internal)
 
-          LAST=$(jq '.tracks[]?.releases[]?.versionCodes? | map(tonumber) | max' /tmp/output.json)
+          echo "$OUTPUT"
+
+          # Pega o último versionCode
+          LAST=$(echo "$OUTPUT" | grep "version_codes" | sed 's/.*\[//;s/\].*//;s/,//g' | awk '{print $NF}')
+          if [ -z "$LAST" ]; then
+            echo "Nenhum build encontrado na Play Store, começando do 1"
+            LAST=0
+          fi
+
           NEXT=$((LAST+1))
           echo "BUILD_NUMBER=$NEXT" >> $GITHUB_ENV
+          echo "Próximo build number: $NEXT"
 
       # - name: Build Android
       #   run: flutter build appbundle --flavor ${{ env.environment }} --release
