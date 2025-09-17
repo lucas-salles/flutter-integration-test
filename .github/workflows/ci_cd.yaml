@@ -61,8 +61,9 @@ jobs:
       - name: Get build number from play store
         id: get_build_number
         run: |
+          # Reconstroi o JSON da Service Account
           echo "${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}" | base64 -d > /tmp/google_play.json
-
+          
           export ANDROID_PACKAGE_NAME=${{ env.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
 
           # Executa o supply e captura os version_codes
