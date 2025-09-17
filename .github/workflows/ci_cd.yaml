@@ -25,6 +25,9 @@ jobs:
           flutter-version: '3.32.4'
           cache: true
 
+      - name: Install dependencies
+        run: flutter pub get
+
       - name: Set environment and version from tag
         id: env
         run: |
@@ -72,7 +75,7 @@ jobs:
           serviceAccountJson: ${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
           packageName: ${{ env.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
           track: internal
-          releaseFile: build/app/outputs/bundle/${{ env.environment }}Release/app-${{ env.environment }}-release.aab
+          releaseFiles: build/app/outputs/bundle/${{ env.environment }}Release/app-${{ env.environment }}-release.aab
 
       # ----------------- WEB -----------------
       # - name: Build Web
