@@ -25,14 +25,6 @@ jobs:
           flutter-version: '3.32.4'
           cache: true
 
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-
-      - name: Install Fastlane
-        run: gem install fastlane
-
       - name: Set environment and version from tag
         id: env
         run: |
@@ -64,7 +56,7 @@ jobs:
 
       - name: Create key.properties for ${{ env.environment }}
         run: |
-          cat <<EOF > android/keystore-${{ env.environment }}.jks
+          cat <<EOF > android/keystore-${{ env.environment }}.properties
           storePassword=${{ env.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
           keyPassword=${{ env.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
           keyAlias=${{ env.environment }}Key
