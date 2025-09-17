@@ -58,51 +58,29 @@ jobs:
           echo "Version: $VERSION"
 
       # ----------------- ANDROID -----------------
-      - name: Get build number from play store
-        id: get_build_number
+      - name: Create keystore for ${{ env.environment }}
         run: |
-          echo "${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}" | base64 -d > /tmp/google_play.json
-    
-          echo "Conteúdo do JSON:"
-          head -n 5 /tmp/google_play.json  # só mostra as 5 primeiras linhas (pra log não vazar tudo)
-          
-          # Valida o JSON
-          cat /tmp/google_play.json | jq . > /dev/null
-          
-          export ANDROID_PACKAGE_NAME=${{ env.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
+          echo "${{ env.environment == 'dev' && secrets.ANDROID_KEYSTORE_FILE_DEV || secrets.ANDROID_KEYSTORE_FILE_PROD }}" | base64 --decode > android/keystore-${{ env.environment }}.jks
 
-          # Executa o supply e captura os version_codes
-          OUTPUT=$(fastlane supply \
-            --json_key /tmp/google_play.json \
-            --package_name $ANDROID_PACKAGE_NAME \
-            --skip_upload_metadata \
-            --skip_upload_images \
-            --skip_upload_screenshots \
-            --track internal)
+      - name: Create key.properties for ${{ env.environment }}
+        run: |
+          cat <<EOF > android/keystore-${{ env.environment }}.jks
+          storePassword=${{ env.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
+          keyPassword=${{ env.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
+          keyAlias=${{ env.environment }}Key
+          storeFile=../keystore-${{ env.environment }}.jks
+          EOF
 
-          echo "$OUTPUT"
+      - name: Build Android
+        run: flutter build appbundle --flavor ${{ env.environment }} --release
 
-          # Pega o último versionCode
-          LAST=$(echo "$OUTPUT" | grep "version_codes" | sed 's/.*\[//;s/\].*//;s/,//g' | awk '{print $NF}')
-          if [ -z "$LAST" ]; then
-            echo "Nenhum build encontrado na Play Store, começando do 1"
-            LAST=0
-          fi
-
-          NEXT=$((LAST+1))
-          echo "BUILD_NUMBER=$NEXT" >> $GITHUB_ENV
-          echo "Próximo build number: $NEXT"
-
-      # - name: Build Android
-      #   run: flutter build appbundle --flavor ${{ env.environment }} --release
-
-      # - name: Deploy to Play Store
-      #   uses: r0adkll/upload-google-play@v1
-      #   with:
-      #     serviceAccountJson: ${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
-      #     packageName: ${{ env.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
-      #     track: internal
-      #     releaseFile: build/app/outputs/bundle/${{ env.environment }}Release/app-${{ env.environment }}-release.aab
+      - name: Deploy to Play Store
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: ${{ env.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
+          packageName: ${{ env.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
+          track: internal
+          releaseFile: build/app/outputs/bundle/${{ env.environment }}Release/app-${{ env.environment }}-release.aab
 
       # ----------------- WEB -----------------
       # - name: Build Web
