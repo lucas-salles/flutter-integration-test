@@ -39,6 +39,6 @@ jobs:
       - name: Get build number from Play Store
         id: get_build_number
         run: |
-          NEXT=$(bundle exec fastlane android next_build_number | tail -n 1)
+          NEXT=$(bundle exec fastlane android next_build_number | tail -n 1 | tr -d '\r')
           echo "BUILD_NUMBER=$NEXT" >> $GITHUB_ENV
           echo "Próximo build number: $NEXT"
