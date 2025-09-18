@@ -1,0 +1,44 @@
+name: Get build number
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Android and Web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.4'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install Fastlane
+        run: |
+          gem install bundler
+          bundle install
+
+      - name: Write Google Play JSON
+        run: |
+          echo "${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}" | base64 -d > /tmp/google_play.json
+
+      - name: Get build number from Play Store
+        id: get_build_number
+        run: |
+          NEXT=$(bundle exec fastlane android next_build_number)
+          echo "BUILD_NUMBER=$NEXT" >> $GITHUB_ENV
+          echo "Próximo build number: $NEXT"

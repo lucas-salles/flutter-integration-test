@@ -1,0 +1,10 @@
+platform :android do
+  desc "Get next build number from Play Store"
+  lane :next_build_number do
+    new_build_number = get_new_build_number(
+      package_name: "com.lucassales.flutter_integration_test.dev",
+      google_play_json_key_path: "/tmp/google_play.json"
+    ).to_s
+    puts "Next build number: #{new_build_number}"
+  end
+end
