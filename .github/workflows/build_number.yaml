@@ -36,9 +36,33 @@ jobs:
         run: |
           echo "${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV_BASE64 }}" | base64 -d > /tmp/google_play.json
 
+      # - name: Get build number from Play Store
+      #   id: get_build_number
+      #   run: |
+      #     NEXT=$(bundle exec fastlane android next_build_number)
+      #     echo "BUILD_NUMBER=$NEXT" >> $GITHUB_ENV
+      #     echo "Próximo build number: $NEXT"
+
       - name: Get build number from Play Store
-        id: get_build_number
-        run: |
-          NEXT=$(bundle exec fastlane android next_build_number)
+        run: |         
+          OUTPUT=$(fastlane supply \
+            --json_key /tmp/google_play.json \
+            --package_name com.lucassales.flutter_integration_test.dev \
+            --track internal \
+            --skip_upload_metadata true \
+            --skip_upload_images true \
+            --skip_upload_screenshots true \
+            --skip_upload_changelogs true \
+            --check_superseded_tracks false)
+
+          echo "$OUTPUT"
+
+          LAST=$(echo "$OUTPUT" | grep -o '"versionCode":[0-9]*' | sed 's/[^0-9]*//g' | sort -nr | head -n1)
+          if [ -z "$LAST" ]; then
+            echo "Nenhum build encontrado na Play Store, começando do 1"
+            LAST=0
+          fi
+
+          NEXT=$((LAST+1))
           echo "BUILD_NUMBER=$NEXT" >> $GITHUB_ENV
           echo "Próximo build number: $NEXT"
