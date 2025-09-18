@@ -1,12 +1,12 @@
 platform :android do
   desc "Get next build number from Play Store"
   lane :next_build_number do
-    latest = get_new_build_number(
+    new_build_number = get_new_build_number(
       package_name: "com.lucassales.flutter_integration_test.dev",
       google_play_json_key_path: "/tmp/google_play.json"
-    )
-    next_build = latest.to_i + 1
-    UI.message("Next build number: #{next_build}") # log só informativo
-    return next_build.to_s # <-- o valor que será capturado
+    ).to_s
+
+    puts "Next build number: #{new_build_number}"
+    new_build_number  # <- última linha retorna o valor
   end
 end
