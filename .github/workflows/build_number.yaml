@@ -40,6 +40,6 @@ jobs:
         id: get_build_number
         working-directory: android
         run: |
-          NEXT=$(bundle exec fastlane android next_build_number | tail -n 1 | tr -d '\r')
+          NEXT=$(bundle exec fastlane android next_build_number | grep "::BUILD_NUMBER::" | cut -d':' -f3)
           echo "BUILD_NUMBER=$NEXT" >> $GITHUB_ENV
           echo "Próximo build number: $NEXT"

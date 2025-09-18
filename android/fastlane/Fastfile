@@ -6,7 +6,7 @@ platform :android do
       google_play_json_key_path: "/tmp/google_play.json"
     ).to_s
 
-    puts "Next build number: #{new_build_number}"
-    new_build_number  # <- última linha retorna o valor
+    UI.message("::BUILD_NUMBER::#{new_build_number}")
+    new_build_number
   end
 end
