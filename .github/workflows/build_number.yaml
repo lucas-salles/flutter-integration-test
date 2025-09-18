@@ -34,7 +34,7 @@ jobs:
 
       - name: Write Google Play JSON
         run: |
-          echo "${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}" | base64 -d > /tmp/google_play.json
+          echo "${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV_BASE64 }}" | base64 -d > /tmp/google_play.json
 
       - name: Get build number from Play Store
         id: get_build_number
