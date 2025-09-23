@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-          description: "Ambiente (ignorado se rodar em tag)"
+          description: "Choose environment (ignored if triggered by tag)"
           required: true
           default: "dev"
           type: choice
@@ -13,7 +13,7 @@ on:
             - prod
 
       target:
-        description: "Qual build rodar"
+        description: "Choose which build to run"
         required: true
         default: "all"
         type: choice
@@ -41,13 +41,20 @@ jobs:
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             TAG_NAME=${GITHUB_REF#refs/tags/}
+
+            if [[ ! "$TAG_NAME" =~ ^(dev|prod)/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Error: Tag '$TAG_NAME' does not follow the pattern dev/X.Y.Z or prod/X.Y.Z"
+              exit 1
+            fi
+
             ENVIRONMENT=${TAG_NAME%%/*}
             VERSION=${TAG_NAME#*/}
-            echo "Detected tag: $TAG_NAME"
+
+            echo "Detected tag: $TAG_NAME. Ignoring workflow input environment."
           else
             ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
             VERSION="manual"
-            echo "No tag detected, using input environment"
+            echo "No tag detected, using workflow input environment."
           fi
 
           echo "environment=$ENVIRONMENT" >> $GITHUB_ENV
