@@ -8,5 +8,6 @@ appId: com.lucassales.flutter_integration_test.dev
 - inputText: "member1@e2e.com"
 - tapOn: "Senha"
 - inputText: "123456"
+- hideKeyboard
 - tapOn: "Entrar"
 - assertVisible: "Home"
