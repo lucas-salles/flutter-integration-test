@@ -21,7 +21,7 @@ on:
           - all
           - web
           - android
-          - ios
+          #- ios
 
   push:
     tags:
