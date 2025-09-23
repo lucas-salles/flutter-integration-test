@@ -29,6 +29,9 @@ on:
     branches:
       - main
 
+env:
+  FLUTTER_VERSION: "3.32.4"
+
 jobs:
   setup:
     name: Setup environment
@@ -65,9 +68,9 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
   build-web:
-    name: Build Web ${{ needs.setup.outputs.environment }}
+    name: Build Web ${{ needs.setup.outputs.environment || '' }}
     needs: setup
-    # if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'web' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'web' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -76,7 +79,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.4'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
       - name: Install dependencies
@@ -105,7 +108,7 @@ jobs:
   #     - name: Setup Flutter
   #       uses: subosito/flutter-action@v2
   #       with:
-  #         flutter-version: '3.32.4'
+  #         flutter-version: ${{ env.FLUTTER_VERSION }}
   #         cache: true
 
   #     - name: Install dependencies
@@ -159,7 +162,7 @@ jobs:
   #     - name: Setup Flutter
   #       uses: subosito/flutter-action@v2
   #       with:
-  #         flutter-version: '3.32.4'
+  #         flutter-version: ${{ env.FLUTTER_VERSION }}
   #         cache: true
 
   #     - name: Install dependencies
