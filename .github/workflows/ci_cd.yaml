@@ -4,14 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-          description: "Choose environment (ignored if triggered by tag)"
-          required: true
-          default: "dev"
-          type: choice
-          options:
-            - dev
-            - prod
-
+        description: "Choose environment (ignored if triggered by tag)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
       target:
         description: "Choose which build to run"
         required: true
@@ -22,11 +21,13 @@ on:
           - web
           - android
           #- ios
-
   push:
     tags:
       - 'dev/*'
       - 'prod/*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   setup:
@@ -64,7 +65,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
   build-web:
-    name: Build Web
+    name: Build Web ${{ needs.setup.outputs.environment }}
     needs: setup
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'web' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
@@ -92,59 +93,59 @@ jobs:
           projectId: ${{ needs.setup.outputs.environment == 'dev' && 'flutter-integration-test-ffb8e' || 'flutter-integration-test-8faf5' }}
           disableComment: true
 
-  build-android:
-    name: Build Android
-    needs: setup
-    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'android' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  # build-android:
+  #   name: Build Android
+  #   needs: setup
+  #   if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'android' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.32.4'
-          cache: true
+  #     - name: Setup Flutter
+  #       uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: '3.32.4'
+  #         cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
+  #     - name: Install dependencies
+  #       run: flutter pub get
 
-      - name: Extract version from pubspec
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-          VERSION_NAME=${VERSION%%+*}
-          VERSION_CODE=${VERSION##*+}
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$VERSION_CODE ($VERSION_NAME)" >> $GITHUB_ENV
+  #     - name: Extract version from pubspec
+  #       run: |
+  #         VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+  #         VERSION_NAME=${VERSION%%+*}
+  #         VERSION_CODE=${VERSION##*+}
+  #         echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+  #         echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+  #         echo "RELEASE_NAME=$VERSION_CODE ($VERSION_NAME)" >> $GITHUB_ENV
 
-      - name: Create keystore
-        run: |
-          echo "${{ needs.setup.outputs.environment == 'dev' && secrets.ANDROID_KEYSTORE_FILE_DEV || secrets.ANDROID_KEYSTORE_FILE_PROD }}" | base64 --decode > android/keystore-${{ needs.setup.outputs.environment }}.jks
+  #     - name: Create keystore
+  #       run: |
+  #         echo "${{ needs.setup.outputs.environment == 'dev' && secrets.ANDROID_KEYSTORE_FILE_DEV || secrets.ANDROID_KEYSTORE_FILE_PROD }}" | base64 --decode > android/keystore-${{ needs.setup.outputs.environment }}.jks
 
-      - name: Create key.properties
-        run: |
-          cat <<EOF > android/${{ needs.setup.outputs.environment }}-key.properties
-          storePassword=${{ needs.setup.outputs.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
-          keyPassword=${{ needs.setup.outputs.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
-          keyAlias=${{ needs.setup.outputs.environment }}Key
-          storeFile=../keystore-${{ needs.setup.outputs.environment }}.jks
-          EOF
+  #     - name: Create key.properties
+  #       run: |
+  #         cat <<EOF > android/${{ needs.setup.outputs.environment }}-key.properties
+  #         storePassword=${{ needs.setup.outputs.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
+  #         keyPassword=${{ needs.setup.outputs.environment == 'dev' && secrets.ANDROID_KEY_STORE_PASSWORD_DEV || secrets.ANDROID_KEY_STORE_PASSWORD_PROD }}
+  #         keyAlias=${{ needs.setup.outputs.environment }}Key
+  #         storeFile=../keystore-${{ needs.setup.outputs.environment }}.jks
+  #         EOF
 
-      - name: Build Android
-        run: flutter build appbundle --flavor ${{ needs.setup.outputs.environment }} --release
+  #     - name: Build Android
+  #       run: flutter build appbundle --flavor ${{ needs.setup.outputs.environment }} --release
 
-      - name: Deploy to Play Store
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ needs.setup.outputs.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
-          packageName: ${{ needs.setup.outputs.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
-          releaseFiles: build/app/outputs/bundle/${{ needs.setup.outputs.environment }}Release/app-${{ needs.setup.outputs.environment }}-release.aab
-          releaseName: ${{ env.RELEASE_NAME }}
-          track: internal
-          status: draft
-          whatsNewDirectory: distribution/whatsnew
+  #     - name: Deploy to Play Store
+  #       uses: r0adkll/upload-google-play@v1
+  #       with:
+  #         serviceAccountJsonPlainText: ${{ needs.setup.outputs.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
+  #         packageName: ${{ needs.setup.outputs.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
+  #         releaseFiles: build/app/outputs/bundle/${{ needs.setup.outputs.environment }}Release/app-${{ needs.setup.outputs.environment }}-release.aab
+  #         releaseName: ${{ env.RELEASE_NAME }}
+  #         track: internal
+  #         status: draft
+  #         whatsNewDirectory: distribution/whatsnew
 
   # build-ios:
   #   name: Build iOS
