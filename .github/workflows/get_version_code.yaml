@@ -30,15 +30,52 @@ jobs:
           
       #     echo "LATEST_BUILD=$LATEST_BUILD"
 
+      # - name: Get latest Play Store version code
+      #   id: android_version
+      #   shell: bash
+      #   run: |
+      #     set -euo pipefail
+
+      #     PACKAGE="com.lucassales.flutter_integration_test.dev"
+
+      #     # roda fastlane e captura stdout+stderr
+      #     RAW_OUTPUT=$(fastlane run google_play_track_version_codes \
+      #       package_name:"$PACKAGE" \
+      #       json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
+      #       track:"internal" 2>&1 || true)
+
+      #     # remove ANSI color codes (se houver) para facilitar parsing
+      #     CLEAN_OUTPUT=$(echo "$RAW_OUTPUT" | perl -pe 's/\e\[[\d;]*[a-zA-Z]//g')
+
+      #     # Extrai todos os padrões [digits] e pega o último (que geralmente é o result)
+      #     # Ex.: "… Result: [13]" -> pega "[13]"
+      #     BRACKETED=$(echo "$CLEAN_OUTPUT" | grep -oE '\[[0-9]+\]' || true)
+      #     LATEST_BUILD=$(echo "$BRACKETED" | tail -n1 | tr -d '[]' || true)
+
+      #     if [[ -z "$LATEST_BUILD" ]]; then
+      #       echo "No versionCode found in Play Store output"
+      #       exit 1
+      #     fi
+
+      #     if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]]; then
+      #       echo "Unable to parse versionCode from fastlane output:"
+      #       echo "$CLEAN_OUTPUT"
+      #       exit 1
+      #     fi
+
+      #     NEXT_BUILD=$((LATEST_BUILD + 1))
+
+      #     echo "LATEST_BUILD=$LATEST_BUILD"
+      #     echo "NEXT_BUILD=$NEXT_BUILD"
+
+      #     echo "LATEST_BUILD=$LATEST_BUILD" >> "$GITHUB_ENV"
+      #     echo "NEXT_BUILD=$NEXT_BUILD" >> "$GITHUB_ENV"
+
       - name: Get latest Play Store version code
         id: android_version
-        #shell: bash
         run: |
-          #set -euo pipefail
-
           PACKAGE="com.lucassales.flutter_integration_test.dev"
 
-          # roda fastlane e captura stdout+stderr
           RAW_OUTPUT=$(fastlane run google_play_track_version_codes \
             package_name:"$PACKAGE" \
             json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
@@ -46,29 +83,13 @@ jobs:
 
           echo "Raw output from fastlane: $RAW_OUTPUT"
 
-          # remove ANSI color codes (se houver) para facilitar parsing
-          #CLEAN_OUTPUT=$(echo "$RAW_OUTPUT" | perl -pe 's/\e\[[\d;]*[a-zA-Z]//g')
+          # Pega só o último número entre colchetes
+          LATEST_BUILD=$(echo "$RAW_OUTPUT" | grep -oE '\[[0-9]+\]' | tail -n1 | tr -d '[]')
 
-          # Extrai todos os padrões [digits] e pega o último (que geralmente é o result)
-          # Ex.: "… Result: [13]" -> pega "[13]"
-          #BRACKETED=$(echo "$CLEAN_OUTPUT" | grep -oE '\[[0-9]+\]' || true)
-          #LATEST_BUILD=$(echo "$BRACKETED" | tail -n1 | tr -d '[]' || true)
+          NEXT_BUILD=$((LATEST_BUILD + 1))
 
-          #if [[ -z "$LATEST_BUILD" ]]; then
-            #echo "No versionCode found in Play Store output"
-            #exit 1
-          #fi
+          echo "LATEST_BUILD=$LATEST_BUILD"
+          echo "NEXT_BUILD=$NEXT_BUILD"
 
-          #if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]]; then
-            #echo "Unable to parse versionCode from fastlane output:"
-            #echo "$CLEAN_OUTPUT"
-            #exit 1
-          #fi
-
-          #NEXT_BUILD=$((LATEST_BUILD + 1))
-
-          #echo "LATEST_BUILD=$LATEST_BUILD"
-          #echo "NEXT_BUILD=$NEXT_BUILD"
-
-          #echo "LATEST_BUILD=$LATEST_BUILD" >> "$GITHUB_ENV"
-          #echo "NEXT_BUILD=$NEXT_BUILD" >> "$GITHUB_ENV"
+          echo "LATEST_BUILD=$LATEST_BUILD" >> "$GITHUB_ENV"
+          echo "NEXT_BUILD=$NEXT_BUILD" >> "$GITHUB_ENV"
