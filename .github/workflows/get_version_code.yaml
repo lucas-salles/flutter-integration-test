@@ -22,19 +22,10 @@ jobs:
       - name: Get latest Play Store version code
         id: android_version
         run: |
-          RESULT=$(fastlane run \
+          LATEST_BUILD=$(fastlane run \
             google_play_track_version_codes \
             package_name:"com.lucassales.flutter_integration_test.dev" \
             json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
-            track:"internal" \
-            --quiet)  # <-- remove logs extras
-
-          # Extrai só o número dentro dos colchetes
-          LATEST_BUILD=$(echo $RESULT | grep -o '\[[0-9]\+\]' | tr -d '[]')
-          NEXT_BUILD=$((LATEST_BUILD + 1))
-
+            track:"internal" | tail -n 1)
+          
           echo "LATEST_BUILD=$LATEST_BUILD"
-          echo "NEXT_BUILD=$NEXT_BUILD"
-
-          echo "LATEST_BUILD=$LATEST_BUILD" >> $GITHUB_ENV
-          echo "NEXT_BUILD=$NEXT_BUILD" >> $GITHUB_ENV
