@@ -200,7 +200,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ needs.setup.outputs.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
           packageName: ${{ needs.setup.outputs.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
           releaseFiles: build/app/outputs/bundle/${{ needs.setup.outputs.environment }}Release/app-${{ needs.setup.outputs.environment }}-release.aab
-          releaseName: "(${{ env.NEXT_BUILD }}) ${{ needs.setup.outputs.version }}"
+          releaseName: "${{ env.NEXT_BUILD }} (${{ needs.setup.outputs.version }})"
           track: internal
           status: draft
           whatsNewDirectory: distribution/whatsnew
