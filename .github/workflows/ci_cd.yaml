@@ -59,7 +59,7 @@ jobs:
             echo "Detected tag: $TAG_NAME. Ignoring workflow input environment/versionName."
           else
             ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
-            VERSION="${{ github.event.inputs.versionName || '1.0.0' }}"
+            VERSION="${{ github.event.inputs.versionName }}"
 
             if [[ -z "$VERSION" ]]; then
               echo "Error: versionName is required when not using a tag"
