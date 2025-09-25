@@ -19,13 +19,17 @@ jobs:
       - name: Install fastlane
         run: gem install fastlane
 
+      - name: Save Google Play JSON key
+        run: |
+          echo '${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' > /tmp/google_play_key.json
+
       - name: Get latest Play Store version code
         id: android_version
         run: |
           LATEST_BUILD=$(fastlane run \
             google_play_track_version_codes \
             package_name:"com.lucassales.flutter_integration_test.dev" \
-            json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
+            json_key:/tmp/google_play_key.json \
             track:"internal" | tail -n 1 | tr -d '[:space:]')
           echo "playstore_version=$LATEST_BUILD" >> $GITHUB_ENV
           echo "playstore_version=$LATEST_BUILD" >> $GITHUB_OUTPUT
