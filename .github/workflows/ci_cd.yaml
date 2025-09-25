@@ -29,9 +29,6 @@ on:
     tags:
       - 'dev/*'
       - 'prod/*'
-  pull_request:
-    branches:
-      - main
 
 env:
   FLUTTER_VERSION: "3.32.4"
@@ -85,39 +82,39 @@ jobs:
           echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-  # build-web:
-  #   name: Build Web
-  #   needs: setup
-  #   if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'web' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
+  build-web:
+    name: Build Web
+    needs: setup
+    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'web' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  #     - name: Setup Flutter
-  #       uses: subosito/flutter-action@v2
-  #       with:
-  #         flutter-version: ${{ env.FLUTTER_VERSION }}
-  #         cache: true
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
 
-  #     - name: Install dependencies
-  #       run: flutter pub get
+      - name: Install dependencies
+        run: flutter pub get
 
-  #     - name: Build Web
-  #       run: flutter build web --release --dart-define=APP_ENV=${{ needs.setup.outputs.environment }}
+      - name: Build Web
+        run: flutter build web --release --dart-define=APP_ENV=${{ needs.setup.outputs.environment }}
 
-  #     - name: Deploy to Firebase Hosting
-  #       uses: FirebaseExtended/action-hosting-deploy@v0
-  #       with:
-  #         firebaseServiceAccount: ${{ needs.setup.outputs.environment == 'dev' && secrets.FIREBASE_SERVICE_ACCOUNT_FLUTTER_INTEGRATION_TEST_FFB8E || secrets.FIREBASE_SERVICE_ACCOUNT_FLUTTER_INTEGRATION_TEST_8FAF5 }}
-  #         channelId: live
-  #         projectId: ${{ needs.setup.outputs.environment == 'dev' && 'flutter-integration-test-ffb8e' || 'flutter-integration-test-8faf5' }}
-  #         disableComment: true
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ needs.setup.outputs.environment == 'dev' && secrets.FIREBASE_SERVICE_ACCOUNT_FLUTTER_INTEGRATION_TEST_FFB8E || secrets.FIREBASE_SERVICE_ACCOUNT_FLUTTER_INTEGRATION_TEST_8FAF5 }}
+          channelId: live
+          projectId: ${{ needs.setup.outputs.environment == 'dev' && 'flutter-integration-test-ffb8e' || 'flutter-integration-test-8faf5' }}
+          disableComment: true
 
   build-android:
     name: Build Android
     needs: setup
-    # if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'android' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'android' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -171,6 +168,16 @@ jobs:
           echo "Raw output from fastlane: $RAW_OUTPUT"
 
           LATEST_BUILD=$(echo "$RAW_OUTPUT" | grep -oE '\[[0-9]+\]' | tail -n1 | tr -d '[]')
+
+          if [[ -z "$LATEST_BUILD" ]]; then
+            echo "No versionCode found in Play Store output"
+            exit 1
+          fi
+
+          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]]; then
+            echo "Unable to parse versionCode from Play Store output"
+            exit 1
+          fi
 
           NEXT_BUILD=$((LATEST_BUILD + 1))
 
@@ -271,6 +278,16 @@ jobs:
   #         echo "Raw output from fastlane: $RAW_OUTPUT"
 
   #         LATEST_BUILD=$(echo "$RAW_OUTPUT" | grep "Result:" | sed -E 's/.*Result: ([0-9]+).*/\1/')
+
+  #         if [[ -z "$LATEST_BUILD" ]]; then
+  #           echo "No buildNumber found in App Store output"
+  #           exit 1
+  #         fi
+
+  #         if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]]; then
+  #           echo "Unable to parse buildNumber from App Store output"
+  #           exit 1
+  #         fi
 
   #         NEXT_BUILD=$((LATEST_BUILD + 1))
 
