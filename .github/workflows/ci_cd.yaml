@@ -166,7 +166,7 @@ jobs:
 
           RAW_OUTPUT=$(fastlane run google_play_track_version_codes \
             package_name:"$PACKAGE" \
-            json_key_file:"/tmp/google_play_key.json" \
+            json_key:"/tmp/google_play_key.json" \
             track:"internal")
 
           echo "Raw output from fastlane: $RAW_OUTPUT"
