@@ -11,23 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          flutter-version: '3.32.4'
-          cache: true
+          ruby-version: 3.2
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Install fastlane
+        run: gem install fastlane
 
-      - name: Get current Play Store version
-        id: playstore
+      - name: Get latest Play Store version code
+        id: android_version
         run: |
-          VERSION_CODE=$(gcloud --quiet alpha android versions list \
-            --package-name=com.lucassales.flutter_integration_test \
-            --json | jq '.[0].versionCode')
-          echo "playstore_version=$VERSION_CODE" >> $GITHUB_ENV
-          echo "playstore_version=$VERSION_CODE" >> $GITHUB_OUTPUT
+          LATEST_BUILD=$(fastlane supply \
+            --package_name "com.lucassales.flutter_integration_test" \
+            --json_key_data '${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
+            --skip_upload_metadata \
+            --skip_upload_changelogs \
+            --skip_upload_images \
+            --skip_upload_screenshots \
+            --check_superseded_tracks true \
+            --track internal \
+            --json_output_dir .tmp_version | jq -r '.apkVersionCodes[0]')
+          echo "playstore_version=$LATEST_BUILD" >> $GITHUB_ENV
+          echo "playstore_version=$LATEST_BUILD" >> $GITHUB_OUTPUT
