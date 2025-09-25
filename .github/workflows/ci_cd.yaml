@@ -21,13 +21,21 @@ on:
           - web
           - android
           #- ios
+      versionName:
+        description: "App version name (ignored if triggered by tag, e.g. 1.2.0)"
+        required: true
+        type: string
   push:
     tags:
       - 'dev/*'
       - 'prod/*'
+  pull_request:
+    branches:
+      - main
 
 env:
   FLUTTER_VERSION: "3.32.4"
+  RUBY_VERSION: "3.2.2"
 
 jobs:
   setup:
@@ -51,11 +59,22 @@ jobs:
             ENVIRONMENT=${TAG_NAME%%/*}
             VERSION=${TAG_NAME#*/}
 
-            echo "Detected tag: $TAG_NAME. Ignoring workflow input environment."
+            echo "Detected tag: $TAG_NAME. Ignoring workflow input environment/versionName."
           else
             ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
-            VERSION="manual"
-            echo "No tag detected, using workflow input environment."
+            VERSION="${{ github.event.inputs.versionName || '1.0.0' }}"
+
+            if [[ -z "$VERSION" ]]; then
+              echo "Error: versionName is required when not using a tag"
+              exit 1
+            fi
+
+            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Error: versionName '$VERSION' must follow the pattern X.Y.Z (e.g. 1.2.3)"
+              exit 1
+            fi
+
+            echo "No tag detected, using workflow input environment/versionName."
           fi
 
           echo "environment=$ENVIRONMENT" >> $GITHUB_ENV
@@ -64,39 +83,39 @@ jobs:
           echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-  build-web:
-    name: Build Web
-    needs: setup
-    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'web' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  # build-web:
+  #   name: Build Web
+  #   needs: setup
+  #   if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'web' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+  #     - name: Setup Flutter
+  #       uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: ${{ env.FLUTTER_VERSION }}
+  #         cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
+  #     - name: Install dependencies
+  #       run: flutter pub get
 
-      - name: Build Web
-        run: flutter build web --release --dart-define=APP_ENV=${{ needs.setup.outputs.environment }}
+  #     - name: Build Web
+  #       run: flutter build web --release --dart-define=APP_ENV=${{ needs.setup.outputs.environment }}
 
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          firebaseServiceAccount: ${{ needs.setup.outputs.environment == 'dev' && secrets.FIREBASE_SERVICE_ACCOUNT_FLUTTER_INTEGRATION_TEST_FFB8E || secrets.FIREBASE_SERVICE_ACCOUNT_FLUTTER_INTEGRATION_TEST_8FAF5 }}
-          channelId: live
-          projectId: ${{ needs.setup.outputs.environment == 'dev' && 'flutter-integration-test-ffb8e' || 'flutter-integration-test-8faf5' }}
-          disableComment: true
+  #     - name: Deploy to Firebase Hosting
+  #       uses: FirebaseExtended/action-hosting-deploy@v0
+  #       with:
+  #         firebaseServiceAccount: ${{ needs.setup.outputs.environment == 'dev' && secrets.FIREBASE_SERVICE_ACCOUNT_FLUTTER_INTEGRATION_TEST_FFB8E || secrets.FIREBASE_SERVICE_ACCOUNT_FLUTTER_INTEGRATION_TEST_8FAF5 }}
+  #         channelId: live
+  #         projectId: ${{ needs.setup.outputs.environment == 'dev' && 'flutter-integration-test-ffb8e' || 'flutter-integration-test-8faf5' }}
+  #         disableComment: true
 
   build-android:
     name: Build Android
     needs: setup
-    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'android' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    # if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target == 'android' || github.event.inputs.target == 'all') || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -111,14 +130,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Extract version from pubspec
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-          VERSION_NAME=${VERSION%%+*}
-          VERSION_CODE=${VERSION##*+}
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$VERSION_CODE ($VERSION_NAME)" >> $GITHUB_ENV
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Install fastlane
+        run: gem install fastlane
 
       - name: Create keystore
         run: |
@@ -133,8 +151,34 @@ jobs:
           storeFile=../keystore-${{ needs.setup.outputs.environment }}.jks
           EOF
 
+      - name: Get latest Play Store version code
+        id: android_version
+        run: |
+          PACKAGE=${{ needs.setup.outputs.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
+          JSON_KEY_DATA=${{ needs.setup.outputs.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
+
+          RAW_OUTPUT=$(fastlane run google_play_track_version_codes \
+            package_name:"$PACKAGE" \
+            json_key_data:"$JSON_KEY_DATA" \
+            track:"internal")
+
+          echo "Raw output from fastlane: $RAW_OUTPUT"
+
+          LATEST_BUILD=$(echo "$RAW_OUTPUT" | grep -oE '\[[0-9]+\]' | tail -n1 | tr -d '[]')
+
+          NEXT_BUILD=$((LATEST_BUILD + 1))
+
+          echo "LATEST_BUILD=$LATEST_BUILD"
+          echo "NEXT_BUILD=$NEXT_BUILD"
+
+          echo "NEXT_BUILD=$NEXT_BUILD" >> "$GITHUB_ENV"
+
       - name: Build Android
-        run: flutter build appbundle --flavor ${{ needs.setup.outputs.environment }} --release
+        run: flutter build appbundle \
+          --release \
+          --build-name ${{ needs.setup.outputs.version }} \
+          --build-number ${{ env.NEXT_BUILD }} \
+          --flavor ${{ needs.setup.outputs.environment }}
 
       - name: Deploy to Play Store
         uses: r0adkll/upload-google-play@v1
