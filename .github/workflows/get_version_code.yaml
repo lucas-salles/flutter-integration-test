@@ -44,9 +44,6 @@ jobs:
             json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
             track:"internal" 2>&1 || true)
 
-          echo "Raw fastlane output (truncated):"
-          echo "$RAW_OUTPUT" | sed -n '1,120p'
-
           # remove ANSI color codes (se houver) para facilitar parsing
           CLEAN_OUTPUT=$(echo "$RAW_OUTPUT" | perl -pe 's/\e\[[\d;]*[a-zA-Z]//g')
 
@@ -58,7 +55,7 @@ jobs:
           # Fallback se nada foi encontrado
           if [[ -z "$LATEST_BUILD" ]]; then
             echo "No versionCode found in Play Store output. Defaulting to 0."
-            LATEST_BUILD=0
+            exit 1
           fi
 
           # garante que é um número
@@ -75,5 +72,3 @@ jobs:
 
           echo "LATEST_BUILD=$LATEST_BUILD" >> "$GITHUB_ENV"
           echo "NEXT_BUILD=$NEXT_BUILD" >> "$GITHUB_ENV"
-          echo "latest_build=$LATEST_BUILD" >> "$GITHUB_OUTPUT"
-          echo "next_build=$NEXT_BUILD" >> "$GITHUB_OUTPUT"
