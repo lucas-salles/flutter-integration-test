@@ -22,10 +22,13 @@ jobs:
       - name: Get latest Play Store version code
         id: android_version
         run: |
-          LATEST_BUILD=$(fastlane run \
+          RESULT=$(fastlane run \
             google_play_track_version_codes \
             package_name:"com.lucassales.flutter_integration_test.dev" \
             json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
             track:"internal" | tail -n 1)
 
+          LATEST_BUILD=${RESULT//[\[\]]/}
+          NEXT_BUILD=$((LATEST_BUILD + 1))
           echo "LATEST_BUILD=$LATEST_BUILD"
+          echo "NEXT_BUILD=$NEXT_BUILD"
