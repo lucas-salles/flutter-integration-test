@@ -159,12 +159,12 @@ jobs:
           if [[ "${{ needs.setup.outputs.environment }}" == "dev" ]]; then
             RAW_OUTPUT=$(fastlane run google_play_track_version_codes \
             package_name:"com.lucassales.flutter_integration_test.dev" \
-            json_key_data:"${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}" \
+            json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
             track:"internal")
           else
             RAW_OUTPUT=$(fastlane run google_play_track_version_codes \
             package_name:"com.lucassales.flutter_integration_test" \
-            json_key_data:"${{ secrets.GOOGLE_PLAY_JSON_KEY_PROD }}" \
+            json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_PROD }}' \
             track:"internal")
           fi
 
