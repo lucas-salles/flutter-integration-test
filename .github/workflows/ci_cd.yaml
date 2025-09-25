@@ -4,14 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-          description: "Choose environment (ignored if triggered by tag)"
-          required: true
-          default: "dev"
-          type: choice
-          options:
-            - dev
-            - prod
-
+        description: "Choose environment (ignored if triggered by tag)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
       target:
         description: "Choose which build to run"
         required: true
@@ -22,11 +21,18 @@ on:
           - web
           - android
           #- ios
-
+      versionName:
+        description: "App version name (ignored if triggered by tag, e.g. 1.2.0)"
+        required: true
+        type: string
   push:
     tags:
       - 'dev/*'
       - 'prod/*'
+
+env:
+  FLUTTER_VERSION: "3.32.4"
+  RUBY_VERSION: "3.2.2"
 
 jobs:
   setup:
@@ -50,12 +56,25 @@ jobs:
             ENVIRONMENT=${TAG_NAME%%/*}
             VERSION=${TAG_NAME#*/}
 
-            echo "Detected tag: $TAG_NAME. Ignoring workflow input environment."
+            echo "Detected tag: $TAG_NAME. Ignoring workflow input environment/versionName."
           else
             ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
-            VERSION="manual"
-            echo "No tag detected, using workflow input environment."
+            VERSION="${{ github.event.inputs.versionName || '1.0.0' }}"
+
+            if [[ -z "$VERSION" ]]; then
+              echo "Error: versionName is required when not using a tag"
+              exit 1
+            fi
+
+            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Error: versionName '$VERSION' must follow the pattern X.Y.Z (e.g. 1.2.3)"
+              exit 1
+            fi
+
+            echo "No tag detected, using workflow input environment/versionName."
           fi
+
+          echo "Set environment to '$ENVIRONMENT' and version to '$VERSION'"
 
           echo "environment=$ENVIRONMENT" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_ENV
@@ -75,7 +94,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.4'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
       - name: Install dependencies
@@ -104,20 +123,19 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.4'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Extract version from pubspec
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-          VERSION_NAME=${VERSION%%+*}
-          VERSION_CODE=${VERSION##*+}
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$VERSION_CODE ($VERSION_NAME)" >> $GITHUB_ENV
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Install fastlane
+        run: gem install fastlane
 
       - name: Create keystore
         run: |
@@ -132,8 +150,49 @@ jobs:
           storeFile=../keystore-${{ needs.setup.outputs.environment }}.jks
           EOF
 
+      - name: Get latest Play Store version code
+        id: android_version
+        run: |
+          if [[ "${{ needs.setup.outputs.environment }}" == "dev" ]]; then
+            RAW_OUTPUT=$(fastlane run google_play_track_version_codes \
+              package_name:"com.lucassales.flutter_integration_test.dev" \
+              json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
+              track:"internal")
+          else
+            RAW_OUTPUT=$(fastlane run google_play_track_version_codes \
+              package_name:"com.lucassales.flutter_integration_test" \
+              json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_PROD }}' \
+              track:"internal")
+          fi
+
+          echo "Raw output from fastlane: $RAW_OUTPUT"
+
+          LATEST_BUILD=$(echo "$RAW_OUTPUT" | grep -oE '\[[0-9]+\]' | tail -n1 | tr -d '[]')
+
+          if [[ -z "$LATEST_BUILD" ]]; then
+            echo "No versionCode found in Play Store output"
+            exit 1
+          fi
+
+          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]]; then
+            echo "Unable to parse versionCode from Play Store output"
+            exit 1
+          fi
+
+          NEXT_BUILD=$((LATEST_BUILD + 1))
+
+          echo "LATEST_BUILD=$LATEST_BUILD"
+          echo "NEXT_BUILD=$NEXT_BUILD"
+
+          echo "NEXT_BUILD=$NEXT_BUILD" >> "$GITHUB_ENV"
+
       - name: Build Android
-        run: flutter build appbundle --flavor ${{ needs.setup.outputs.environment }} --release
+        run: |
+          flutter build appbundle \
+          --release \
+          --build-name ${{ needs.setup.outputs.version }} \
+          --build-number ${{ env.NEXT_BUILD }} \
+          --flavor ${{ needs.setup.outputs.environment }}
 
       - name: Deploy to Play Store
         uses: r0adkll/upload-google-play@v1
@@ -141,7 +200,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ needs.setup.outputs.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
           packageName: ${{ needs.setup.outputs.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
           releaseFiles: build/app/outputs/bundle/${{ needs.setup.outputs.environment }}Release/app-${{ needs.setup.outputs.environment }}-release.aab
-          releaseName: ${{ env.RELEASE_NAME }}
+          releaseName: "(${{ env.NEXT_BUILD }}) ${{ needs.setup.outputs.version }}"
           track: internal
           status: draft
           whatsNewDirectory: distribution/whatsnew
@@ -158,11 +217,19 @@ jobs:
   #     - name: Setup Flutter
   #       uses: subosito/flutter-action@v2
   #       with:
-  #         flutter-version: '3.32.4'
+  #         flutter-version: ${{ env.FLUTTER_VERSION }}
   #         cache: true
 
   #     - name: Install dependencies
   #       run: flutter pub get
+
+  #     - name: Setup Ruby
+  #       uses: ruby/setup-ruby@v1
+  #       with:
+  #         ruby-version: ${{ env.RUBY_VERSION }}
+
+  #     - name: Install fastlane
+  #       run: gem install fastlane
 
   #     - name: Import code sign
   #       uses: apple-actions/import-codesign-certs@v3
@@ -178,19 +245,65 @@ jobs:
   #         api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
   #         api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 
-  #     # - name: Install CocoaPods
-  #     #   run: pod install --project-directory=ios
+  #     - name: Create a valid API Key JSON
+  #       run: |
+  #         KEY_CONTENT="${{ secrets.APPSTORE_API_PRIVATE_KEY }}"
+          
+  #         ESCAPED_KEY_CONTENT="${KEY_CONTENT//$'\n'/\\n}"
+          
+  #         cat <<EOF > auth_key.json
+  #         {
+  #           "key_id": "${{ secrets.APPSTORE_API_KEY_ID }}",
+  #           "issuer_id": "${{ secrets.APPSTORE_ISSUER_ID }}",
+  #           "key": "${ESCAPED_KEY_CONTENT}",
+  #           "in_house": false
+  #         }
+  #         EOF
+
+  #     - name: Get latest iOS App Store build number
+  #       id: ios_version
+  #       run: |
+  #         if [[ "${{ needs.setup.outputs.environment }}" == "dev" ]]; then
+  #           RAW_OUTPUT=$(fastlane run app_store_build_number \
+  #             app_identifier:"com.lucassales.flutterIntegrationTest.dev" \
+  #             api_key_path:"auth_key.json" \
+  #             live:false)
+  #         else
+  #           RAW_OUTPUT=$(fastlane run app_store_build_number \
+  #             app_identifier:"com.lucassales.flutterIntegrationTest" \
+  #             api_key_path:"auth_key.json" \
+  #             live:false)
+  #         fi
+
+  #         echo "Raw output from fastlane: $RAW_OUTPUT"
+
+  #         LATEST_BUILD=$(echo "$RAW_OUTPUT" | grep "Result:" | sed -E 's/.*Result: ([0-9]+).*/\1/')
+
+  #         if [[ -z "$LATEST_BUILD" ]]; then
+  #           echo "No buildNumber found in App Store output"
+  #           exit 1
+  #         fi
+
+  #         if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]]; then
+  #           echo "Unable to parse buildNumber from App Store output"
+  #           exit 1
+  #         fi
+
+  #         NEXT_BUILD=$((LATEST_BUILD + 1))
+
+  #         echo "LATEST_BUILD=$LATEST_BUILD"
+  #         echo "NEXT_BUILD=$NEXT_BUILD"
+
+  #         echo "NEXT_BUILD=$NEXT_BUILD" >> $GITHUB_ENV
 
   #     - name: Build iOS
   #       run: |
-  #         flutter build ipa --flavor ${{ needs.setup.outputs.environment }} --release --export-options-plist=ios/config/${{ needs.setup.outputs.environment }}/ExportOptions.plist
-      
-  #     - name: Upload dSYMs to Crashlytics
-  #       run: |
-  #         GOOGLE_SERVICE_PLIST=ios/config/${{ needs.setup.outputs.environment }}/GoogleService-Info.plist
-  #         ./ios/Pods/FirebaseCrashlytics/upload-symbols \
-  #           -gsp $GOOGLE_SERVICE_PLIST \
-  #           -p ios build/ios/ipa/*.dSYM.zip
+  #         flutter build ipa \
+  #         --release \
+  #         --build-name ${{ needs.setup.outputs.version }} \
+  #         --build-number ${{ env.NEXT_BUILD }} \
+  #         --flavor ${{ needs.setup.outputs.environment }} \
+  #         --export-options-plist=ios/config/${{ needs.setup.outputs.environment }}/ExportOptions.plist
 
   #     - name: Upload to TestFlight
   #       uses: apple-actions/upload-testflight-build@v3
