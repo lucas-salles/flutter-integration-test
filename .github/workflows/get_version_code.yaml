@@ -26,10 +26,6 @@ jobs:
             google_play_track_version_codes \
             package_name:"com.lucassales.flutter_integration_test.dev" \
             json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
-            track:"internal" | grep -Eo '[0-9]+' | sort -nr | head -n1)
+            track:"internal")
 
-          echo "playstore_version=$LATEST_BUILD" >> $GITHUB_ENV
-          echo "playstore_version=$LATEST_BUILD" >> $GITHUB_OUTPUT
-
-      - name: Print result
-        run: echo "Latest Play Store versionCode is ${{ env.playstore_version }}"
+          echo "LATEST_BUILD=$LATEST_BUILD"
