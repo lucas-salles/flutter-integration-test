@@ -29,7 +29,7 @@ jobs:
           LATEST_BUILD=$(fastlane run \
             google_play_track_version_codes \
             package_name:"com.lucassales.flutter_integration_test.dev" \
-            json_key:/tmp/google_play_key.json \
+            json_key_data:'${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}' \
             track:"internal" | grep -Eo '[0-9]+' | sort -nr | head -n1)
 
           echo "playstore_version=$LATEST_BUILD" >> $GITHUB_ENV
