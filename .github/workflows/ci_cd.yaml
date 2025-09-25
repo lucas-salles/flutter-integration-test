@@ -77,6 +77,8 @@ jobs:
             echo "No tag detected, using workflow input environment/versionName."
           fi
 
+          echo "Set environment to '$ENVIRONMENT' and version to '$VERSION'"
+
           echo "environment=$ENVIRONMENT" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_ENV
 
@@ -156,15 +158,15 @@ jobs:
         run: |
           if [[ "${{ needs.setup.outputs.environment }}" == "dev" ]]; then
             PACKAGE="com.lucassales.flutter_integration_test.dev"
-            JSON_KEY_DATA="${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}"
+            echo "${{ secrets.GOOGLE_PLAY_JSON_KEY_DEV }}" > /tmp/google_play_key.json
           else
             PACKAGE="com.lucassales.flutter_integration_test"
-            JSON_KEY_DATA="${{ secrets.GOOGLE_PLAY_JSON_KEY_PROD }}"
+            echo "${{ secrets.GOOGLE_PLAY_JSON_KEY_PROD }}" > /tmp/google_play_key.json
           fi
 
           RAW_OUTPUT=$(fastlane run google_play_track_version_codes \
             package_name:"$PACKAGE" \
-            json_key_data:"$JSON_KEY_DATA" \
+            json_key_file:"/tmp/google_play_key.json" \
             track:"internal")
 
           echo "Raw output from fastlane: $RAW_OUTPUT"
@@ -178,24 +180,24 @@ jobs:
 
           echo "NEXT_BUILD=$NEXT_BUILD" >> "$GITHUB_ENV"
 
-      - name: Build Android
-        run: |
-          flutter build appbundle \
-          --release \
-          --build-name ${{ needs.setup.outputs.version }} \
-          --build-number ${{ env.NEXT_BUILD }} \
-          --flavor ${{ needs.setup.outputs.environment }}
+      # - name: Build Android
+      #   run: |
+      #     flutter build appbundle \
+      #     --release \
+      #     --build-name ${{ needs.setup.outputs.version }} \
+      #     --build-number ${{ env.NEXT_BUILD }} \
+      #     --flavor ${{ needs.setup.outputs.environment }}
 
-      - name: Deploy to Play Store
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ needs.setup.outputs.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
-          packageName: ${{ needs.setup.outputs.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
-          releaseFiles: build/app/outputs/bundle/${{ needs.setup.outputs.environment }}Release/app-${{ needs.setup.outputs.environment }}-release.aab
-          releaseName: ${{ env.RELEASE_NAME }}
-          track: internal
-          status: draft
-          whatsNewDirectory: distribution/whatsnew
+      # - name: Deploy to Play Store
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJsonPlainText: ${{ needs.setup.outputs.environment == 'dev' && secrets.GOOGLE_PLAY_JSON_KEY_DEV || secrets.GOOGLE_PLAY_JSON_KEY_PROD }}
+      #     packageName: ${{ needs.setup.outputs.environment == 'dev' && 'com.lucassales.flutter_integration_test.dev' || 'com.lucassales.flutter_integration_test' }}
+      #     releaseFiles: build/app/outputs/bundle/${{ needs.setup.outputs.environment }}Release/app-${{ needs.setup.outputs.environment }}-release.aab
+      #     releaseName: ${{ env.RELEASE_NAME }}
+      #     track: internal
+      #     status: draft
+      #     whatsNewDirectory: distribution/whatsnew
 
   # build-ios:
   #   name: Build iOS
