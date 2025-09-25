@@ -1,0 +1,33 @@
+name: Get version code
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  tests:
+    name: Get version code from Play Store
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.4'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Get current Play Store version
+        id: playstore
+        run: |
+          VERSION_CODE=$(gcloud --quiet alpha android versions list \
+            --package-name=com.lucassales.flutter_integration_test \
+            --json | jq '.[0].versionCode')
+          echo "playstore_version=$VERSION_CODE" >> $GITHUB_ENV
+          echo "playstore_version=$VERSION_CODE" >> $GITHUB_OUTPUT
