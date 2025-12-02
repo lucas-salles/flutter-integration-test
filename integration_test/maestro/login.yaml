@@ -2,8 +2,9 @@ appId: com.lucassales.flutter_integration_test.dev
 ---
 - launchApp:
     clearState: true
-- waitForAnimationToEnd:
-    timeout: 15000
+- extendedWaitUntil:
+    visible: "Email"
+    timeout: 90000
 - tapOn: "Email"
 - inputText: "member1@e2e.com"
 - tapOn: "Senha"
